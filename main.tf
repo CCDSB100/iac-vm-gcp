@@ -6,7 +6,7 @@ resource "google_compute_instance" "teste-squad4" {
     device_name = "teste-squad4"
     auto_delete = "true"
     initialize_params {
-	image = "ubuntu-os-cloud/ubuntu-2404-lts-amd"
+	image = "ubuntu-os-cloud/ubuntu-2404-lts-amd64"
 	size = 100
 	type = "hyperdisk-balanced"
      }

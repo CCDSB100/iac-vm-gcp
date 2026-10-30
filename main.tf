@@ -4,6 +4,12 @@
 resource "google_compute_instance" "teste-squad4" {
   boot_disk {
     device_name = "teste-squad4"
+    auto_delete = "true"
+    initialize_params {
+	image = "ubuntu-os-cloud/ubuntu-2404-lts-amd"
+	size = 100
+	type = "hyperdisk-balanced"
+     }
   }
   confidential_instance_config {
     enable_confidential_compute = false

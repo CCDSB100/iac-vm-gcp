@@ -1,32 +1,30 @@
-# This code is compatible with Terraform 4.25.0 and versions that are backwards compatible to 4.25.0.
-# For information about validating this Terraform code, see https://developer.hashicorp.com/terraform/tutorials/gcp-get-started/google-cloud-platform-build#format-and-validate-the-configuration
-
-resource "google_compute_instance" "teste-squad4" {
+resource "google_compute_instance" "teste-squad" {
   boot_disk {
-    device_name = "teste-squad4"
+    device_name = "teste-${var.squad_name}"
     auto_delete = "true"
     initialize_params {
-	image = "ubuntu-os-cloud/ubuntu-2404-lts-amd64"
-	size = 100
-	type = "hyperdisk-balanced"
-     }
+      image = "ubuntu-os-cloud/ubuntu-2404-lts-amd64"
+      size  = 100
+      type  = "hyperdisk-balanced"
+    }
   }
   confidential_instance_config {
     enable_confidential_compute = false
   }
-  description = ""
+  description = "Ambiente de testes automatizado para a squad ${var.squad_name}"
   instance_encryption_key {
   }
   key_revocation_action_type = "NONE"
-  machine_type               = "c4-standard-8"
+  machine_type               = var.machine_type
   metadata_startup_script    = "#!/bin/bash\nset -e\n\nif ! command -v docker >/dev/null 2>&1; then\n  curl -fsSL https://get.docker.com | sh\nfi\n\nsystemctl enable --now docker"
-  name                       = "teste-squad4"
+  name                       = "teste-${var.squad_name}"
+  
   network_interface {
     access_config {
       network_tier = "PREMIUM"
     }
-    stack_type         = "IPV4_ONLY"
-    subnetwork         = "projects/project-5548564d-93e9-4f06-939/regions/us-east1/subnetworks/default"
+    stack_type           = "IPV4_ONLY"
+    subnetwork           = "projects/project-5548564d-93e9-4f06-939/regions/us-east1/subnetworks/default"
     subnetwork_project = "project-5548564d-93e9-4f06-939"
   }
   reservation_affinity {
@@ -36,7 +34,7 @@ resource "google_compute_instance" "teste-squad4" {
     automatic_restart           = false
     instance_termination_action = "DELETE"
     max_run_duration {
-      seconds = 3600
+      seconds = var.max_run_duration_seconds
     }
     on_host_maintenance = "TERMINATE"
     provisioning_model  = "STANDARD"
@@ -50,13 +48,13 @@ resource "google_compute_instance" "teste-squad4" {
 }
 
 module "ops_agent_policy" {
-  source          = "github.com/terraform-google-modules/terraform-google-cloud-operations/modules/ops-agent-policy"
-  project         = "project-5548564d-93e9-4f06-939"
-  zone            = "us-east1-b"
-  assignment_id   = "goog-ops-agent-v2-template-1-7-0-us-east1-b"
+  source        = "github.com/terraform-google-modules/terraform-google-cloud-operations/modules/ops-agent-policy"
+  project       = "project-5548564d-93e9-4f06-939"
+  zone          = "us-east1-b"
+  assignment_id = "goog-ops-agent-v2-template-1-7-0-us-east1-b"
   agents_rule = {
     package_state = "installed"
-    version = "latest"
+    version       = "latest"
   }
   instance_filter = {
     all = false

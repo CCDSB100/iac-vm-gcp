@@ -1,0 +1,50 @@
+name: Provisionar Maquina GCP
+
+on:
+  workflow_dispatch:
+    inputs:
+      squad_name:
+        description: 'Nome da sua Squad (ex: squad3, squad-ia)'
+        required: true
+        default: 'squad-teste'
+        type: string
+      machine_type:
+        description: 'Tipo de Máquina do GCP'
+        required: true
+        default: 'c4-standard-8'
+        type: choice
+        options:
+          - c4-standard-8
+      max_duration:
+        description: 'Tempo máximo de execução em segundos (ex: 3600 = 1h)'
+        required: true
+        default: '3600'
+        type: string
+
+jobs:
+  terraform-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do Código
+        uses: actions/checkout@v4
+
+      - name: Autenticar no Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }} # Chave da Service Account cadastrada nos Secrets do repositório
+
+      - name: Configurar o Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.5.7'
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Apply Automático
+        run: |
+          terraform apply -auto-approve \
+            -var="squad_name=${{ github.event.inputs.squad_name }}" \
+            -var="machine_type=${{ github.event.inputs.machine_type }}" \
+            -var="max_run_duration_seconds=${{ github.event.inputs.max_duration }}"

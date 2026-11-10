@@ -90,3 +90,23 @@ resource "google_compute_instance" "teste-squad" {
 
   tags = ["http-server", "https-server"]
 }
+
+output "instance_name" {
+  value       = google_compute_instance.teste-squad.name
+  description = "Nome da instância criada"
+}
+
+output "zone" {
+  value       = var.zone
+  description = "Zona onde a VM foi provisionada"
+}
+
+output "external_ip" {
+  value       = google_compute_instance.teste-squad.network_interface[0].access_config[0].nat_ip
+  description = "Endereço IP público da VM"
+}
+
+output "duration_hours" {
+  value       = var.max_run_duration_seconds / 3600
+  description = "Duração máxima da VM em horas"
+}

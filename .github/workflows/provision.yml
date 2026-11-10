@@ -48,9 +48,38 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
-      - name: Terraform Apply Automático
+      - name: Terraform Apply
+        id: tf-apply
         run: |
           terraform apply -auto-approve \
             -var="squad_name=${{ github.event.inputs.squad_name }}" \
             -var="machine_type=${{ github.event.inputs.machine_type }}" \
-            -var="max_run_duration_seconds=${{ github.event.inputs.max_duration }}"
+            -var="max_run_duration_seconds=${{ github.event.inputs.max_run_duration_seconds }}"
+
+      - name: Extrair Outputs e Gerar Sumário
+        if: always()
+        run: |
+          # Captura os dados do Terraform
+          INSTANCE_NAME=$(terraform output -raw instance_name)
+          ZONE=$(terraform output -raw zone)
+          EXT_IP=$(terraform output -raw external_ip)
+          HOURS=$(terraform output -raw duration_hours)
+          
+          # Calcula o horário estimado de término (baseado no horário UTC do runner)
+          EXPIRY_TIME=$(date -u -d "+${HOURS} hours" "+%Y-%m-%d %H:%M:%S UTC")
+
+          # Escreve o sumário bonito no GitHub Actions
+          echo "### 🚀 Máquina Virtual Provisionada com Sucesso!" >> $GITHUB_STEP_SUMMARY
+          echo "- **Instância:** \`$INSTANCE_NAME\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Região/Zona:** \`$ZONE\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **IP Externo:** \`$EXT_IP\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⏱️ **Ciclo de Vida:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Esta máquina ficará ativa por **$HOURS hora(s)**." >> $GITHUB_STEP_SUMMARY
+          echo "- **Previsão de exclusão automática:** \`$EXPIRY_TIME\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🔑 **Como Acessar (Sem dor de cabeça):**" >> $GITHUB_STEP_SUMMARY
+          echo "Basta rodar o comando abaixo no seu terminal (ou Cloud Shell) para se conectar via SSH de forma segura:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "gcloud compute ssh $INSTANCE_NAME --zone=$ZONE --project=${{ secrets.GCP_PROJECT_ID_ALT || 'project-5548564d-93e9-4f06-939' }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY

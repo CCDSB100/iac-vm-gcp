@@ -3,7 +3,7 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = "~> 4.25.0"
+      version = ">= 5.0.0" # Atualizado para v5+ que suporta as novas features do OS Config e Compute
     }
   }
 }
@@ -15,26 +15,27 @@ provider "google" {
 }
 
 resource "google_compute_instance" "teste-squad" {
+  name         = "teste-${var.squad_name}"
+  machine_type = var.machine_type
+  zone         = var.zone
+  description  = "Ambiente de testes automatizado para a squad ${var.squad_name}"
+
   boot_disk {
     device_name = "teste-${var.squad_name}"
-    auto_delete = "true"
+    auto_delete = true
     initialize_params {
       image = "ubuntu-os-cloud/ubuntu-2404-lts-amd64"
       size  = 100
       type  = "hyperdisk-balanced"
     }
   }
-  
+
   confidential_instance_config {
     enable_confidential_compute = false
   }
-  
-  description = "Ambiente de testes automatizado para a squad ${var.squad_name}"
-  
-  machine_type            = var.machine_type
+
   metadata_startup_script = "#!/bin/bash\nset -e\n\nif ! command -v docker >/dev/null 2>&1; then\n  curl -fsSL https://get.docker.com | sh\nfi\n\nsystemctl enable --now docker"
-  name                    = "teste-${var.squad_name}"
-  
+
   labels = {
     goog-ops-agent-policy = "v2-template-1-7-0"
   }
@@ -43,25 +44,27 @@ resource "google_compute_instance" "teste-squad" {
     access_config {
       network_tier = "PREMIUM"
     }
-    stack_type           = "IPV4_ONLY"
-    subnetwork           = "projects/project-5548564d-93e9-4f06-939/regions/${var.region}/subnetworks/default"
+    stack_type         = "IPV4_ONLY"
+    subnetwork         = "projects/project-5548564d-93e9-4f06-939/regions/${var.region}/subnetworks/default"
     subnetwork_project = "project-5548564d-93e9-4f06-939"
   }
-  
+
   reservation_affinity {
     type = "ANY_RESERVATION"
   }
-  
+
   scheduling {
-    automatic_restart           = false
-    instance_termination_action = "DELETE"
-    max_run_duration {
-      seconds = var.max_run_duration_seconds
-    }
+    automatic_restart   = false
     on_host_maintenance = "TERMINATE"
     provisioning_model  = "STANDARD"
+
+    max_run_duration {
+      nanos   = 0
+      seconds = var.max_run_duration_seconds
+    }
+    instance_termination_action = "DELETE"
   }
-  
+
   service_account {
     email  = "309462774956-compute@developer.gserviceaccount.com"
     scopes = [
@@ -73,9 +76,8 @@ resource "google_compute_instance" "teste-squad" {
       "https://www.googleapis.com/auth/trace.append"
     ]
   }
-  
+
   tags = ["http-server", "https-server"]
-  zone = var.zone
 }
 
 module "ops_agent_policy" {

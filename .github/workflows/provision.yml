@@ -29,10 +29,12 @@ jobs:
       - name: Checkout do Código
         uses: actions/checkout@v4
 
-      - name: Autenticar no Google Cloud
+      - name: Autenticar no Google Cloud (Workload Identity)
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }} # Chave da Service Account cadastrada nos Secrets do repositório
+          workload_identity_provider: 'projects/309462774956/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
+          service_account: '309462774956-compute@developer.gserviceaccount.com'
+          create_credentials_file: true
 
       - name: Configurar o Terraform
         uses: hashicorp/setup-terraform@v3

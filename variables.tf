@@ -19,11 +19,11 @@ variable "max_run_duration_seconds" {
 variable "region" {
   type        = string
   description = "Região do GCP"
-  default     = "southamerica-east1"
+  default     = "us-east1"
 }
 
 variable "zone" {
   type        = string
   description = "Zona do GCP"
-  default     = "southamerica-east1-a"
+  default     = "us-east1-b"
 }

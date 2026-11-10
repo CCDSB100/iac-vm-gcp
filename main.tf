@@ -3,7 +3,7 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = ">= 5.0.0" # Atualizado para v5+ que suporta as novas features do OS Config e Compute
+      version = ">= 5.0.0"
     }
   }
 }
@@ -34,11 +34,22 @@ resource "google_compute_instance" "teste-squad" {
     enable_confidential_compute = false
   }
 
-  metadata_startup_script = "#!/bin/bash\nset -e\n\nif ! command -v docker >/dev/null 2>&1; then\n  curl -fsSL https://get.docker.com | sh\nfi\n\nsystemctl enable --now docker"
+  # Script de inicialização: Instala Docker E o Google Cloud Ops Agent nativamente
+  metadata_startup_script = <<-EOT
+    #!/bin/bash
+    set -e
 
-  labels = {
-    goog-ops-agent-policy = "v2-template-1-7-0"
-  }
+    echo "=== Atualizando sistema e instalando Docker ==="
+    if ! command -v docker >/dev/null 2>&1; then
+      curl -fsSL https://get.docker.com | sh
+    fi
+    systemctl enable --now docker
+
+    echo "=== Instalando Google Cloud Ops Agent ==="
+    curl -sSO https://dl.google.com/cloudagents/add-google-cloud-ops-agent-repo.sh
+    sudo bash add-google-cloud-ops-agent-repo.sh --also-install
+    sudo systemctl status google-cloud-ops-agent || true
+  EOT
 
   network_interface {
     access_config {
@@ -78,23 +89,4 @@ resource "google_compute_instance" "teste-squad" {
   }
 
   tags = ["http-server", "https-server"]
-}
-
-module "ops_agent_policy" {
-  source        = "github.com/terraform-google-modules/terraform-google-cloud-operations/modules/ops-agent-policy"
-  project       = "project-5548564d-93e9-4f06-939"
-  zone          = var.zone
-  assignment_id = "goog-ops-agent-v2-template-1-7-0-${var.zone}"
-  agents_rule = {
-    package_state = "installed"
-    version       = "latest"
-  }
-  instance_filter = {
-    all = false
-    inclusion_labels = [{
-      labels = {
-        goog-ops-agent-policy = "v2-template-1-7-0"
-      }
-    }]
-  }
 }

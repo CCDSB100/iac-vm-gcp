@@ -65,7 +65,11 @@ jobs:
             EXT_IP=$(terraform output -raw external_ip)
             HOURS=$(terraform output -raw duration_hours)
             
-            EXPIRY_TIME=$(date -u -d "+${HOURS} hours" "+%Y-%m-%d %H:%M:%S UTC" 2>/dev/null || echo "Exclusão automática ativada")
+            # Calcula a expiração convertendo para o Horário de Brasília
+            EXPIRY_TIME=$(TZ='America/Sao_Paulo' date -d "+${HOURS} hours" "+%Y-%m-%d %H:%M:%S (Horário de Brasília)" 2>/dev/null || echo "Exclusão automática ativada em ${HOURS}h")
+
+            # Monta a URL exata do SSH via navegador do GCP
+            SSH_WEB_URL="https://ssh.cloud.google.com/v2/ssh/projects/project-5548564d-93e9-4f06-939/zones/$ZONE/instances/$INSTANCE_NAME?authuser=0&hl=en_US&projectNumber=309462774956&useAdminProxy=true"
 
             echo "### 🚀 Máquina Virtual Provisionada com Sucesso!" >> $GITHUB_STEP_SUMMARY
             echo "- **Instância:** \`$INSTANCE_NAME\`" >> $GITHUB_STEP_SUMMARY
@@ -76,8 +80,9 @@ jobs:
             echo "- Esta máquina ficará ativa por **$HOURS hora(s)**." >> $GITHUB_STEP_SUMMARY
             echo "- **Previsão de exclusão automática:** \`$EXPIRY_TIME\`" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "🔑 **Como Acessar:**" >> $GITHUB_STEP_SUMMARY
-            echo "Rodar no seu terminal/Cloud Shell:" >> $GITHUB_STEP_SUMMARY
+            echo "🔑 **Formas de Acesso:**" >> $GITHUB_STEP_SUMMARY
+            echo "1. **Via Navegador (Um clique):** [Abrir SSH no Browser]($SSH_WEB_URL)" >> $GITHUB_STEP_SUMMARY
+            echo "2. **Via Terminal / Cloud Shell:**" >> $GITHUB_STEP_SUMMARY
             echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
             echo "gcloud compute ssh $INSTANCE_NAME --zone=$ZONE --project=project-5548564d-93e9-4f06-939" >> $GITHUB_STEP_SUMMARY
             echo "\`\`\`" >> $GITHUB_STEP_SUMMARY

@@ -1,3 +1,19 @@
+terraform {
+  required_version = ">= 1.5.0"
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 4.25.0"
+    }
+  }
+}
+
+provider "google" {
+  project = "project-5548564d-93e9-4f06-939"
+  region  = var.region
+  zone    = var.zone
+}
+
 resource "google_compute_instance" "teste-squad" {
   boot_disk {
     device_name = "teste-${var.squad_name}"
@@ -8,28 +24,34 @@ resource "google_compute_instance" "teste-squad" {
       type  = "hyperdisk-balanced"
     }
   }
+  
   confidential_instance_config {
     enable_confidential_compute = false
   }
-  description = "Ambiente de testes automatizado para a squad ${var.squad_name}"
-  instance_encryption_key {
-  }
-  key_revocation_action_type = "NONE"
-  machine_type               = var.machine_type
-  metadata_startup_script    = "#!/bin/bash\nset -e\n\nif ! command -v docker >/dev/null 2>&1; then\n  curl -fsSL https://get.docker.com | sh\nfi\n\nsystemctl enable --now docker"
-  name                       = "teste-${var.squad_name}"
   
+  description = "Ambiente de testes automatizado para a squad ${var.squad_name}"
+  
+  machine_type            = var.machine_type
+  metadata_startup_script = "#!/bin/bash\nset -e\n\nif ! command -v docker >/dev/null 2>&1; then\n  curl -fsSL https://get.docker.com | sh\nfi\n\nsystemctl enable --now docker"
+  name                    = "teste-${var.squad_name}"
+  
+  labels = {
+    goog-ops-agent-policy = "v2-template-1-7-0"
+  }
+
   network_interface {
     access_config {
       network_tier = "PREMIUM"
     }
     stack_type           = "IPV4_ONLY"
-    subnetwork           = "projects/project-5548564d-93e9-4f06-939/regions/us-east1/subnetworks/default"
+    subnetwork           = "projects/project-5548564d-93e9-4f06-939/regions/${var.region}/subnetworks/default"
     subnetwork_project = "project-5548564d-93e9-4f06-939"
   }
+  
   reservation_affinity {
     type = "ANY_RESERVATION"
   }
+  
   scheduling {
     automatic_restart           = false
     instance_termination_action = "DELETE"
@@ -39,19 +61,28 @@ resource "google_compute_instance" "teste-squad" {
     on_host_maintenance = "TERMINATE"
     provisioning_model  = "STANDARD"
   }
+  
   service_account {
     email  = "309462774956-compute@developer.gserviceaccount.com"
-    scopes = ["https://www.googleapis.com/auth/devstorage.read_only", "https://www.googleapis.com/auth/logging.write", "https://www.googleapis.com/auth/monitoring.write", "https://www.googleapis.com/auth/service.management.readonly", "https://www.googleapis.com/auth/servicecontrol", "https://www.googleapis.com/auth/trace.append"]
+    scopes = [
+      "https://www.googleapis.com/auth/devstorage.read_only",
+      "https://www.googleapis.com/auth/logging.write",
+      "https://www.googleapis.com/auth/monitoring.write",
+      "https://www.googleapis.com/auth/service.management.readonly",
+      "https://www.googleapis.com/auth/servicecontrol",
+      "https://www.googleapis.com/auth/trace.append"
+    ]
   }
+  
   tags = ["http-server", "https-server"]
-  zone = "us-east1-b"
+  zone = var.zone
 }
 
 module "ops_agent_policy" {
   source        = "github.com/terraform-google-modules/terraform-google-cloud-operations/modules/ops-agent-policy"
   project       = "project-5548564d-93e9-4f06-939"
-  zone          = "us-east1-b"
-  assignment_id = "goog-ops-agent-v2-template-1-7-0-us-east1-b"
+  zone          = var.zone
+  assignment_id = "goog-ops-agent-v2-template-1-7-0-${var.zone}"
   agents_rule = {
     package_state = "installed"
     version       = "latest"

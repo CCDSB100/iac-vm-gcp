@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       squad_name:
-        description: 'Nome da sua Squad (ex: squad3, squad-ia)'
+        description: 'Nome da sua Squad (ex: squad-4, squad-5)'
         required: true
         default: 'squad-teste'
         type: string

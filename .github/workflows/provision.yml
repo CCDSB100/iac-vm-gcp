@@ -14,10 +14,10 @@ on:
         default: 'c4-standard-8'
         type: choice
         options:
-          - c4-standard-8
           - e2-medium
           - n2-standard-4
-      max_duration:
+          - c4-standard-8
+      max_run_duration_seconds:
         description: 'Tempo máximo de execução em segundos (ex: 3600 = 1h)'
         required: true
         default: '3600'
@@ -59,27 +59,29 @@ jobs:
       - name: Extrair Outputs e Gerar Sumário
         if: always()
         run: |
-          # Captura os dados do Terraform
-          INSTANCE_NAME=$(terraform output -raw instance_name)
-          ZONE=$(terraform output -raw zone)
-          EXT_IP=$(terraform output -raw external_ip)
-          HOURS=$(terraform output -raw duration_hours)
-          
-          # Calcula o horário estimado de término (baseado no horário UTC do runner)
-          EXPIRY_TIME=$(date -u -d "+${HOURS} hours" "+%Y-%m-%d %H:%M:%S UTC")
+          if terraform output -raw instance_name >/dev/null 2>&1; then
+            INSTANCE_NAME=$(terraform output -raw instance_name)
+            ZONE=$(terraform output -raw zone)
+            EXT_IP=$(terraform output -raw external_ip)
+            HOURS=$(terraform output -raw duration_hours)
+            
+            EXPIRY_TIME=$(date -u -d "+${HOURS} hours" "+%Y-%m-%d %H:%M:%S UTC" 2>/dev/null || echo "Exclusão automática ativada")
 
-          # Escreve o sumário bonito no GitHub Actions
-          echo "### 🚀 Máquina Virtual Provisionada com Sucesso!" >> $GITHUB_STEP_SUMMARY
-          echo "- **Instância:** \`$INSTANCE_NAME\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **Região/Zona:** \`$ZONE\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **IP Externo:** \`$EXT_IP\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "⏱️ **Ciclo de Vida:**" >> $GITHUB_STEP_SUMMARY
-          echo "- Esta máquina ficará ativa por **$HOURS hora(s)**." >> $GITHUB_STEP_SUMMARY
-          echo "- **Previsão de exclusão automática:** \`$EXPIRY_TIME\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "🔑 **Como Acessar (Sem dor de cabeça):**" >> $GITHUB_STEP_SUMMARY
-          echo "Basta rodar o comando abaixo no seu terminal (ou Cloud Shell) para se conectar via SSH de forma segura:" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-          echo "gcloud compute ssh $INSTANCE_NAME --zone=$ZONE --project=${{ secrets.GCP_PROJECT_ID_ALT || 'project-5548564d-93e9-4f06-939' }}" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "### 🚀 Máquina Virtual Provisionada com Sucesso!" >> $GITHUB_STEP_SUMMARY
+            echo "- **Instância:** \`$INSTANCE_NAME\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **Região/Zona:** \`$ZONE\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **IP Externo:** \`$EXT_IP\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "⏱️ **Ciclo de Vida:**" >> $GITHUB_STEP_SUMMARY
+            echo "- Esta máquina ficará ativa por **$HOURS hora(s)**." >> $GITHUB_STEP_SUMMARY
+            echo "- **Previsão de exclusão automática:** \`$EXPIRY_TIME\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "🔑 **Como Acessar:**" >> $GITHUB_STEP_SUMMARY
+            echo "Rodar no seu terminal/Cloud Shell:" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+            echo "gcloud compute ssh $INSTANCE_NAME --zone=$ZONE --project=project-5548564d-93e9-4f06-939" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ⚠️ O provisionamento falhou ou foi interrompido." >> $GITHUB_STEP_SUMMARY
+            echo "Nenhum output foi gerado. Verifique os logs do Terraform acima." >> $GITHUB_STEP_SUMMARY
+          fi

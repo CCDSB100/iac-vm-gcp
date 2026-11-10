@@ -1,12 +1,12 @@
 # 🖥️ Provisionamento Automatizado de VMs no GCP
-
 Este repositório utiliza **Terraform** e **GitHub Actions** para provisionar instâncias de VM no Google Cloud Platform (GCP) de forma rápida, segura e com ciclo de vida automatizado (auto-deleção).
 
+## 📽️ Passo a Passo em Vídeo
+🔗 Disponível em: [Vídeo Tutorial](https://drive.google.com/file/d/1oN9LvpKarB39wvBioeRo-pGYF5sodf74/view?usp=sharing)
 
 ## 📋 Pré-requisitos
 * Estar logado no GitHub com uma conta que tenha acesso ao repositório.
 * Possuir a sua conta **Gmail/Google Workspace autorizada** no projeto GCP SB100 para conseguir acessar a máquina virtual.
-
 
 ## 🛠️ Passo a Passo para Executar
 ### 1. Acessar o Workflow
